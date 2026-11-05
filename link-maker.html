@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Tion | Сілтеме жасаушы</title>
+<style>
+:root{--bg:#f8fafc;--card:#fff;--text:#1e293b;--muted:#64748b;--primary:#3b82f6;--border:#e2e8f0;--ok:#16a34a;--err:#dc2626}
+@media (prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--border:#334155}}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:640px;margin:0 auto;padding:32px 20px}
+h1{text-align:center;font-size:2.2rem;margin:0 0 4px;background:linear-gradient(135deg,#3b82f6,#1e40af);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{text-align:center;color:var(--muted);margin-bottom:24px}
+.card{background:var(--card);border-radius:24px;padding:26px;margin-bottom:18px;box-shadow:0 10px 25px rgba(0,0,0,.06)}
+label{display:block;font-size:.9rem;color:var(--muted);margin:14px 0 4px}
+label:first-child{margin-top:0}
+input{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:1rem}
+button{padding:12px 20px;border:none;border-radius:999px;background:var(--primary);color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+button:hover{background:#2563eb}
+button.sec{background:transparent;color:var(--primary);border:2px solid var(--primary)}
+button.sm{padding:6px 14px;font-size:.88rem}
+button.danger{background:transparent;color:var(--err);border:2px solid var(--err)}
+button:disabled{opacity:.6;cursor:wait}
+.preview{margin-top:8px;font-size:1.05rem;font-weight:600;word-break:break-all;color:var(--primary)}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center}
+.status{margin-top:14px;line-height:1.5}
+.ok{color:var(--ok)}.err{color:var(--err)}
+.hint{font-size:.85rem;color:var(--muted);margin-top:8px;line-height:1.5}
+.item{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)}
+.item:last-child{border-bottom:none}
+.item .nm{flex:1;min-width:180px;font-weight:600;word-break:break-all}
+.item .nm small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.item .bt{display:flex;gap:6px;flex-wrap:wrap}
+a.btn{display:inline-block;padding:6px 14px;font-size:.88rem;border-radius:999px;background:var(--primary);color:#fff;text-decoration:none;font-weight:600}
+details summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Q-Tion</h1>
+  <div class="sub">GitHub сілтемесін қысқа vercel.app сілтемесіне айналдыру</div>
+
+  <div class="card">
+    <label>GitHub сайтының сілтемесі</label>
+    <input id="src" placeholder="https://semei123.github.io/tests/tests/fizika/">
+    <label>Қалаған ат</label>
+    <input id="nm" placeholder="fizika">
+    <div class="preview" id="prev">https://<span id="pn">fizika</span>.vercel.app/</div>
+    <div class="row">
+      <button id="go">Сілтеме жасау</button>
+    </div>
+    <div id="status" class="status"></div>
+    <div id="res" class="row" style="display:none">
+      <a id="open" class="btn" target="_blank" rel="noopener">Ашу</a>
+      <button id="cp" class="sec sm">Көшіру</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <details id="settings">
+      <summary>⚙ Vercel баптаулары (бір рет)</summary>
+      <label>Vercel токен (vercel.com/account/tokens)</label>
+      <input id="tok" type="password" placeholder="токен">
+      <label>Team ID (жеке аккаунт болса, бос қалдырыңыз)</label>
+      <input id="team" placeholder="team_...">
+      <div class="row"><button id="save">Сақтау</button><span id="saveMsg" class="ok"></span></div>
+      <div class="hint">Токен тек осы браузерде сақталады және тек vercel.com-ға жіберіледі.</div>
+    </details>
+  </div>
+
+  <div class="card">
+    <b>Жасалған сілтемелер</b>
+    <div id="list" class="hint">Әзірге жоқ.</div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const API='https://api.vercel.com', LS='qtion_links';
+const TR={а:'a',ә:'a',б:'b',в:'v',г:'g',ғ:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'i',к:'k',қ:'k',л:'l',м:'m',н:'n',ң:'n',о:'o',ө:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ұ:'u',ү:'u',ф:'f',х:'h',һ:'h',ц:'c',ч:'ch',ш:'sh',щ:'sh',ы:'y',і:'i',э:'e',ю:'yu',я:'ya'};
+function slug(s){
+  return Array.from(s.toLowerCase()).map(c=>TR[c]!==undefined?TR[c]:c).join('')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,50).replace(/-+$/,'');
+}
+const cfg=()=>({token:$('tok').value.trim(),team:$('team').value.trim()});
+const q=c=>c.team?`?teamId=${encodeURIComponent(c.team)}`:'';
+const hdr=c=>({'Authorization':'Bearer '+c.token,'Content-Type':'application/json'});
+const getList=()=>{try{return JSON.parse(localStorage.getItem(LS)||'[]')}catch(e){return[]}};
+const setList=a=>{try{localStorage.setItem(LS,JSON.stringify(a))}catch(e){}};
+function status(m,c){ $('status').className='status '+(c||''); $('status').textContent=m; }
+function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+
+// баптаулар
+try{ $('tok').value=localStorage.getItem('qtion_vtok')||''; $('team').value=localStorage.getItem('qtion_vteam')||''; }catch(e){}
+if(!$('tok').value) $('settings').open=true;
+$('save').onclick=()=>{
+  try{ localStorage.setItem('qtion_vtok',$('tok').value.trim()); localStorage.setItem('qtion_vteam',$('team').value.trim()); }catch(e){}
+  $('saveMsg').textContent='✅ Сақталды'; setTimeout(()=>$('saveMsg').textContent='',2500);
+};
+
+// ат алдын ала көрсету
+$('nm').oninput=()=>{ $('pn').textContent=slug($('nm').value)||'fizika'; };
+
+async function create(){
+  const c=cfg();
+  let src=$('src').value.trim();
+  const name=slug($('nm').value);
+  if(!c.token){ $('settings').open=true; return status('Алдымен Vercel токенін енгізіп, «Сақтау» басыңыз.','err'); }
+  if(!/^https:\/\/.+/i.test(src)) return status('GitHub сілтемесі https:// деп басталуы керек.','err');
+  if(!name) return status('Атын жазыңыз (мысалы: fizika).','err');
+  src=src.replace(/\/+$/,'');   // соңғы / алып тастаймыз, кейін өзіміз қосамыз
+  $('go').disabled=true; status('Жасап жатыр...');
+  try{
+    const cfgJson={ rewrites:[{source:'/(.*)',destination:src+'/$1'}] };
+    const body={
+      name, target:'production',
+      files:[
+        {file:'vercel.json',data:b64(JSON.stringify(cfgJson)),encoding:'base64'},
+        {file:'empty.txt',data:b64('.'),encoding:'base64'}
+      ],
+      projectSettings:{framework:null}
+    };
+    const r=await fetch(`${API}/v13/deployments${q(c)}`,{method:'POST',headers:hdr(c),body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(`Vercel ${r.status}: ${(j.error&&j.error.message)||'белгісіз қате'}`);
+    const al=j.alias||[];
+    const host=al.find(a=>a===name+'.vercel.app')||al.find(a=>a.endsWith('.vercel.app'))||name+'.vercel.app';
+    const url='https://'+host+'/';
+    const list=getList().filter(x=>x.name!==name);
+    setList([{name,url,src},...list]);
+    $('open').href=url; $('res').style.display='flex';
+    $('cp').onclick=async()=>{ try{ await navigator.clipboard.writeText(url); $('cp').textContent='Көшірілді ✓'; setTimeout(()=>$('cp').textContent='Көшіру',1500);}catch(e){ prompt('Сілтеме:',url); } };
+    status('✅ Дайын: '+url+'  (1 минутқа дейін жарияланады)','ok');
+    render();
+  }catch(e){ console.error(e); status('Қате: '+e.message,'err'); }
+  $('go').disabled=false;
+}
+$('go').onclick=create;
+
+function render(){
+  const box=$('list'), l=getList();
+  if(!l.length){ box.className='hint'; box.textContent='Әзірге жоқ.'; return; }
+  box.className=''; box.innerHTML='';
+  for(const t of l){
+    const row=document.createElement('div'); row.className='item';
+    const nm=document.createElement('div'); nm.className='nm'; nm.textContent=t.url;
+    const sm=document.createElement('small'); sm.textContent='→ '+t.src; nm.appendChild(sm);
+    const bt=document.createElement('div'); bt.className='bt';
+    const o=document.createElement('a'); o.className='btn'; o.href=t.url; o.target='_blank'; o.rel='noopener'; o.textContent='Ашу';
+    const cp=document.createElement('button'); cp.className='sec sm'; cp.textContent='Көшіру';
+    cp.onclick=async()=>{ try{ await navigator.clipboard.writeText(t.url); cp.textContent='✓'; setTimeout(()=>cp.textContent='Көшіру',1200);}catch(e){ prompt('Сілтеме:',t.url); } };
+    const del=document.createElement('button'); del.className='danger sm'; del.textContent='Өшіру';
+    del.onclick=async()=>{
+      if(!confirm(`«${t.name}» өшіру керек пе? ${t.url} жұмыс істемейді.`)) return;
+      const c=cfg(); row.style.opacity='.5';
+      try{
+        const d=await fetch(`${API}/v9/projects/${encodeURIComponent(t.name)}${q(c)}`,{method:'DELETE',headers:hdr(c)});
+        if(!d.ok&&d.status!==404) throw new Error('Vercel '+d.status);
+        setList(getList().filter(x=>x.name!==t.name)); render();
+      }catch(e){ row.style.opacity='1'; alert('Өшіру қатесі: '+e.message); }
+    };
+    bt.append(o,cp,del); row.append(nm,bt); box.appendChild(row);
+  }
+}
+render();
+</script>
+</body>
+</html>
